@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather — Rangpur</title>
+
+  <!-- removes favicon 404 -->
+  <link rel="icon" href="data:,">
+
+  <style>
+    :root{
+      --bg1:#0b1020; --bg2:#101a3a;
+      --card:rgba(255,255,255,.08);
+      --stroke:rgba(255,255,255,.14);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.7);
+      --shadow: 0 24px 60px rgba(0,0,0,.35);
+      --radius: 22px;
+      --accent:#7c5cff; --accent2:#25d6ff;
+      --good:#3ddc97; --warn:#ffcc00; --bad:#ff5c7a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 15% 10%, rgba(124,92,255,.35), transparent 60%),
+        radial-gradient(900px 700px at 85% 20%, rgba(37,214,255,.28), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+      padding: 24px 16px 30px;
+    }
+    .wrap{max-width:1050px;margin:0 auto;}
+    header{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-end;}
+    h1{margin:0;font-size:28px;}
+    .sub{color:var(--muted);font-size:14px;margin-top:6px;}
+    .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end;}
+    .input{
+      display:flex;gap:10px;align-items:center;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      padding:10px 12px;
+      min-width:280px;
+    }
+    input{
+      width:100%; border:none; outline:none;
+      background:transparent; color:var(--text);
+      font-size:14px;
+    }
+    input::placeholder{color:rgba(255,255,255,.55);}
+    .btn{
+      border:none; cursor:pointer; color:var(--text);
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.14);
+      padding:10px 12px;
+      border-radius:14px;
+      font-size:13px;
+      display:inline-flex;gap:8px;align-items:center;
+      transition:.2s;
+      user-select:none;
+    }
+    .btn:hover{background:rgba(255,255,255,.14);}
+    .btn.primary{
+      background:linear-gradient(135deg, rgba(124,92,255,.95), rgba(37,214,255,.70));
+    }
+    .seg{
+      display:flex; overflow:hidden; border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.08);
+    }
+    .seg button{
+      border:none; background:transparent; cursor:pointer;
+      padding:10px 12px; color:rgba(255,255,255,.65);
+      transition:.2s;
+    }
+    .seg button.active{background:rgba(255,255,255,.16); color:var(--text);}
+    main{
+      margin-top:16px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:16px;
+    }
+    @media (max-width:900px){main{grid-template-columns:1fr}}
+    .card{
+      background: linear-gradient(180deg, var(--card), rgba(255,255,255,.05));
+      border:1px solid var(--stroke);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(16px);
+      overflow:hidden;
+    }
+    .cardHead{
+      padding:16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .content{padding:18px 16px;}
+    .hero{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;}
+    .city{font-size:20px;margin:0;}
+    .meta{color:var(--muted);font-size:13px;margin-top:4px;}
+    .temp{font-size:60px;font-weight:800;margin:0;letter-spacing:-1px;}
+    .cond{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+    .cond img{width:60px;height:60px;}
+    .desc{color:var(--muted);font-size:13px;}
+    .grid{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+    @media (max-width:520px){.grid{grid-template-columns:1fr 1fr}.input{min-width:unset;width:100%}}
+    .stat{
+      padding:12px;
+      border-radius:16px;
+      background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.12);
+      min-height:74px;
+    }
+    .label{color:rgba(255,255,255,.55);font-size:12px;}
+    .value{margin-top:6px;font-size:16px;font-weight:650;}
+    .side{display:flex;flex-direction:column;gap:16px;}
+    .note{padding:14px;color:var(--muted);font-size:13px;line-height:1.5;}
+    .aqi{
+      margin-top:10px;
+      display:none;
+      width:fit-content;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.08);
+      color:var(--muted);
+      font-size:12px;
+      align-items:center;
+      gap:8px;
+    }
+    .dot{width:10px;height:10px;border-radius:999px;background:var(--good);}
+    .toast{
+      position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+      background:rgba(10,14,28,.7);
+      border:1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(14px);
+      color:var(--text);
+      padding:10px 12px;border-radius:14px;
+      opacity:0;pointer-events:none;
+      transition:.25s;
+      max-width:calc(100% - 30px);
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Weather</h1>
+        <div class="sub">One-page weather app — default: Rangpur</div>
+      </div>
+
+      <div class="bar">
+        <div class="input">
+          🔎 <input id="cityInput" placeholder="Search city (Dhaka, London…)" />
+        </div>
+        <button class="btn primary" id="searchBtn">Search ↵</button>
+        <button class="btn" id="geoBtn">📍 My location</button>
+        <div class="seg">
+          <button id="cBtn" class="active">°C</button>
+          <button id="fBtn">°F</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <div class="cardHead">
+          <div>
+            <div style="font-weight:700;">Current Conditions</div>
+            <div id="updatedAt" style="font-size:12px;color:rgba(255,255,255,.55);margin-top:4px;">—</div>
+          </div>
+          <button class="btn" id="refreshBtn">⟳ Refresh</button>
+        </div>
+
+        <div class="content">
+          <div class="hero">
+            <div>
+              <p class="city" id="cityName">Rangpur</p>
+              <div class="meta" id="cityMeta">—</div>
+
+              <div class="aqi" id="aqiBadge">
+                <span class="dot" id="aqiDot"></span>
+                <span id="aqiText">AQI —</span>
+              </div>
+            </div>
+
+            <div style="text-align:right;">
+              <p class="temp" id="tempValue">--°</p>
+              <div class="cond">
+                <img id="conditionIcon" alt="" />
+                <div class="desc" id="conditionText">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="stat"><div class="label">🌡️ Feels like</div><div class="value" id="feelsLike">—</div></div>
+            <div class="stat"><div class="label">💧 Humidity</div><div class="value" id="humidity">—</div></div>
+            <div class="stat"><div class="label">🌬️ Wind</div><div class="value" id="wind">—</div></div>
+            <div class="stat"><div class="label">☁️ Cloud</div><div class="value" id="cloud">—</div></div>
+            <div class="stat"><div class="label">👁️ Visibility</div><div class="value" id="vis">—</div></div>
+            <div class="stat"><div class="label">🔆 UV</div><div class="value" id="uv">—</div></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="card">
+          <div class="note">
+            <b>Status:</b> <span id="statusBox">Ready.</span><br><br>
+            Tips:
+            <ul style="margin:10px 0 0 18px;">
+              <li>Type a city name and press Enter</li>
+              <li>Or click <b>My location</b></li>
+              <li>Toggle °C / °F</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="note">
+            <b>Recent:</b>
+            <div id="recentBox" style="margin-top:10px;">Rangpur</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"><span id="toastMsg">Error</span></div>
+
+  <script>
+    // IMPORTANT: we are calling OUR NODE SERVER (proxy), not WeatherAPI directly
+    const CURRENT_ENDPOINT = (q) =>
+  `https://young-glitter-b63a.johnkramer270.workers.dev/?q=${encodeURIComponent(q)}`;
+
+    const DEFAULT_CITY = "Rangpur";
+
+    const el = (id) => document.getElementById(id);
+
+    const cityInput = el("cityInput");
+    const searchBtn = el("searchBtn");
+    const geoBtn = el("geoBtn");
+    const refreshBtn = el("refreshBtn");
+
+    const cBtn = el("cBtn");
+    const fBtn = el("fBtn");
+
+    const updatedAt = el("updatedAt");
+    const cityName = el("cityName");
+    const cityMeta = el("cityMeta");
+    const conditionIcon = el("conditionIcon");
+    const conditionText = el("conditionText");
+    const tempValue = el("tempValue");
+
+    const feelsLike = el("feelsLike");
+    const humidity = el("humidity");
+    const wind = el("wind");
+    const cloud = el("cloud");
+    const vis = el("vis");
+    const uv = el("uv");
+
+    const statusBox = el("statusBox");
+    const recentBox = el("recentBox");
+
+    const aqiBadge = el("aqiBadge");
+    const aqiText = el("aqiText");
+    const aqiDot = el("aqiDot");
+
+    const toast = el("toast");
+    const toastMsg = el("toastMsg");
+
+    const state = {
+      unit: "C",
+      lastQuery: DEFAULT_CITY,
+      lastData: null,
+      recents: [DEFAULT_CITY],
+    };
+
+    function showToast(message){
+      toastMsg.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    function setStatus(message){
+      statusBox.textContent = message;
+    }
+
+    function aqiCategory(usEpaIndex){
+      const n = Number(usEpaIndex);
+      if(!n || Number.isNaN(n)) return null;
+      const map = {
+        1: {label:"Good", color:"var(--good)"},
+        2: {label:"Moderate", color:"var(--warn)"},
+        3: {label:"Unhealthy (Sensitive)", color:"#ff9f43"},
+        4: {label:"Unhealthy", color:"var(--bad)"},
+        5: {label:"Very Unhealthy", color:"#c44bff"},
+        6: {label:"Hazardous", color:"#b00020"},
+      };
+      return map[n] ? {...map[n], n} : null;
+    }
+
+    function updateRecents(newItem){
+      const cleaned = newItem.trim();
+      if(!cleaned) return;
+      state.recents = [cleaned, ...state.recents.filter(x => x.toLowerCase() !== cleaned.toLowerCase())].slice(0, 5);
+      recentBox.innerHTML = state.recents.map(x =>
+        `<button class="btn" style="margin:4px 6px 0 0; padding:8px 10px; font-size:12px;" data-recent="${x}">${x}</button>`
+      ).join("");
+      recentBox.querySelectorAll("button[data-recent]").forEach(btn => {
+        btn.addEventListener("click", () => fetchAndRender(btn.getAttribute("data-recent")));
+      });
+    }
+
+    async function fetchWeather(query){
+      const res = await fetch(CURRENT_ENDPOINT(query));
+      const data = await res.json();
+      if(data?.error){
+        throw new Error(data.error.message || "City not found");
+      }
+      return data;
+    }
+
+    function render(data){
+      state.lastData = data;
+
+      const loc = data.location;
+      const cur = data.current;
+
+      cityName.textContent = loc.name || state.lastQuery;
+      cityMeta.textContent = `${loc.country || ""}${loc.region ? " • " + loc.region : ""} • Local time: ${loc.localtime || "—"}`;
+      updatedAt.textContent = cur.last_updated ? `Updated: ${cur.last_updated}` : "—";
+
+      const iconUrl = cur.condition?.icon ? (cur.condition.icon.startsWith("http") ? cur.condition.icon : `https:${cur.condition.icon}`) : "";
+      conditionIcon.src = iconUrl;
+      conditionText.textContent = cur.condition?.text || "—";
+
+      const temp = state.unit === "C" ? cur.temp_c : cur.temp_f;
+      tempValue.textContent = `${Math.round(temp)}°${state.unit}`;
+
+      const fl = state.unit === "C" ? cur.feelslike_c : cur.feelslike_f;
+      feelsLike.textContent = `${Math.round(fl)}°${state.unit}`;
+      humidity.textContent = `${cur.humidity ?? "—"}%`;
+      wind.textContent = state.unit === "C" ? `${Math.round(cur.wind_kph ?? 0)} kph` : `${Math.round(cur.wind_mph ?? 0)} mph`;
+      cloud.textContent = `${cur.cloud ?? "—"}%`;
+      vis.textContent = state.unit === "C" ? `${cur.vis_km ?? "—"} km` : `${cur.vis_miles ?? "—"} mi`;
+      uv.textContent = `${cur.uv ?? "—"}`;
+
+      const usEpa = cur.air_quality?.["us-epa-index"];
+      const aqi = aqiCategory(usEpa);
+      if(aqi){
+        aqiBadge.style.display = "inline-flex";
+        aqiText.textContent = `AQI: ${aqi.label} (EPA ${aqi.n})`;
+        aqiDot.style.background = aqi.color;
+      } else {
+        aqiBadge.style.display = "none";
+      }
+    }
+
+    async function fetchAndRender(query){
+      const q = (query || "").trim() || DEFAULT_CITY;
+      state.lastQuery = q;
+      setStatus("Fetching weather...");
+      try{
+        const data = await fetchWeather(q);
+        render(data);
+        updateRecents(data?.location?.name || q);
+        setStatus("Done ✅");
+      } catch(err){
+        console.error(err);
+        setStatus("Couldn’t fetch weather.");
+        showToast(err.message || "Something went wrong");
+      }
+    }
+
+    function setUnit(unit){
+      state.unit = unit;
+      cBtn.classList.toggle("active", unit === "C");
+      fBtn.classList.toggle("active", unit === "F");
+      if(state.lastData) render(state.lastData);
+      else fetchAndRender(state.lastQuery);
+    }
+
+    // Events
+    searchBtn.addEventListener("click", () => fetchAndRender(cityInput.value));
+    cityInput.addEventListener("keydown", (e) => { if(e.key === "Enter") fetchAndRender(cityInput.value); });
+    refreshBtn.addEventListener("click", () => fetchAndRender(state.lastQuery));
+    cBtn.addEventListener("click", () => setUnit("C"));
+    fBtn.addEventListener("click", () => setUnit("F"));
+
+    geoBtn.addEventListener("click", () => {
+      if(!navigator.geolocation){
+        showToast("Geolocation not supported.");
+        return;
+      }
+      setStatus("Getting your location...");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          fetchAndRender(`${lat},${lon}`);
+        },
+        (err) => {
+          showToast(err.message || "Location error");
+          setStatus("Location permission denied.");
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      );
+    });
+
+    // Init
+    updateRecents(DEFAULT_CITY);
+    fetchAndRender(DEFAULT_CITY);
+  </script>
+</body>
+</html>
